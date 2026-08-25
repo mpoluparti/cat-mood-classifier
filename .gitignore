@@ -12,7 +12,9 @@ data/processed/*
 !data/raw/.gitkeep
 !data/processed/.gitkeep
 
-# Trained models
+# Trained models -- classifier.joblib IS committed since the web app serves
+# it directly; only exclude other experimental/generated model artifacts.
 models/*.joblib
+!models/classifier.joblib
 models/*.pkl
 !models/.gitkeep
