@@ -18,3 +18,7 @@ models/*.joblib
 !models/classifier.joblib
 models/*.pkl
 !models/.gitkeep
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
