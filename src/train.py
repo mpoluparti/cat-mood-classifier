@@ -7,6 +7,7 @@ from pathlib import Path
 
 import joblib
 import numpy as np
+from imblearn.over_sampling import SMOTE
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import classification_report, confusion_matrix
 from sklearn.model_selection import cross_val_score, train_test_split
@@ -18,6 +19,9 @@ from .preprocess import load_and_normalize
 
 RAW_DIR = Path(__file__).resolve().parent.parent / "data" / "raw"
 MODEL_PATH = Path(__file__).resolve().parent.parent / "models" / "classifier.joblib"
+FEATURE_CACHE_PATH = (
+    Path(__file__).resolve().parent.parent / "data" / "processed" / "features_cache.npz"
+)
 
 
 def build_dataset(index):
@@ -29,11 +33,24 @@ def build_dataset(index):
     return np.array(X), np.array(y)
 
 
+def load_or_build_dataset(index):
+    if FEATURE_CACHE_PATH.exists():
+        cached = np.load(FEATURE_CACHE_PATH, allow_pickle=True)
+        if len(cached["y"]) == len(index):
+            print(f"Loaded cached features from {FEATURE_CACHE_PATH}")
+            return cached["X"], cached["y"]
+
+    X, y = build_dataset(index)
+    FEATURE_CACHE_PATH.parent.mkdir(parents=True, exist_ok=True)
+    np.savez(FEATURE_CACHE_PATH, X=X, y=y)
+    return X, y
+
+
 def main():
     index = build_index(RAW_DIR)
     print(f"Found {len(index)} labeled clips: {index['label'].value_counts().to_dict()}")
 
-    X, y = build_dataset(index)
+    X, y = load_or_build_dataset(index)
 
     encoder = LabelEncoder()
     y_enc = encoder.fit_transform(y)
@@ -41,6 +58,10 @@ def main():
     X_train, X_test, y_train, y_test = train_test_split(
         X, y_enc, test_size=0.2, stratify=y_enc, random_state=42
     )
+
+    # Oversample the training split only -- the minority class (waiting_for_food,
+    # 92 clips) was being missed most of the time before this was added.
+    X_train, y_train = SMOTE(random_state=42).fit_resample(X_train, y_train)
 
     clf = RandomForestClassifier(n_estimators=200, random_state=42)
 
