@@ -46,6 +46,28 @@ primary model, kept for reference):
 python -m src.train_embeddings
 ```
 
+## Web app
+
+A FastAPI backend serves the trained model, and a React (Vite) frontend
+lets you upload a clip and see the predicted mood with per-class
+probabilities.
+
+Backend (from the project root, with the venv active):
+
+```bash
+uvicorn backend.main:app --reload
+```
+
+Frontend (in a separate terminal):
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+Then open the Vite dev server URL (usually http://localhost:5173).
+
 ## Project layout
 
 ```
@@ -59,7 +81,10 @@ src/
   predict.py          load the saved model and classify a single clip
   embeddings.py        extract pretrained YAMNet embeddings
   train_embeddings.py  train/compare classifiers on YAMNet embeddings
-models/          saved trained models (not committed)
+backend/
+  main.py          FastAPI app: POST /predict (audio -> label + probabilities)
+frontend/          React (Vite) upload UI, calls the backend API
+models/          saved trained models (classifier.joblib is committed)
 ```
 
 ## Results
@@ -83,6 +108,7 @@ lower (55-57% test accuracy) -- see `src/train_embeddings.py`.
 - [x] Baseline hand-crafted-feature + RandomForest pipeline
 - [x] Fix class imbalance (SMOTE) -- 67% -> 78% test accuracy
 - [x] Try YAMNet embeddings -- underperformed, kept as a documented experiment
+- [x] Web app: FastAPI backend + React frontend for uploading a clip and getting a prediction
 - [ ] Try hyperparameter tuning / Gradient Boosting on the current features
 - [ ] Optional: CNN on spectrograms (needs more data to avoid overfitting)
-- [ ] Optional: simple CLI/web demo for uploading a clip and getting a prediction
+- [ ] Optional: deploy the web app (e.g. Render/Fly.io for the API, Vercel/Netlify for the frontend)
