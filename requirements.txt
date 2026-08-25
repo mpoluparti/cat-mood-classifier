@@ -6,3 +6,5 @@ scikit-learn==1.5.0
 imbalanced-learn==0.12.4
 matplotlib==3.9.0
 joblib==1.4.2
+tensorflow==2.20.0
+tensorflow-hub==0.16.1
