@@ -27,7 +27,7 @@ this convention and will silently skip files that don't match it.
 
 ## Usage
 
-Train and evaluate:
+Train and evaluate the primary model (hand-crafted features + SMOTE):
 
 ```bash
 python -m src.train
@@ -39,26 +39,50 @@ Predict on a new clip:
 python -m src.predict path/to/clip.wav
 ```
 
+Run the YAMNet embeddings experiment (currently underperforms the
+primary model, kept for reference):
+
+```bash
+python -m src.train_embeddings
+```
+
 ## Project layout
 
 ```
 data/raw/        raw downloaded audio (not committed)
-data/processed/  cached intermediate data (not committed)
+data/processed/  cached extracted features (not committed)
 src/
-  data_utils.py  scan data/raw and build a labeled file index
-  preprocess.py  load, trim silence, normalize, fix clip length
-  features.py    extract MFCC / pitch / spectral / energy features
-  train.py       build dataset, train + evaluate a RandomForest, save it
-  predict.py     load the saved model and classify a single clip
-models/          saved trained model (not committed)
+  data_utils.py       scan data/raw and build a labeled file index
+  preprocess.py       load, trim silence, normalize, fix clip length
+  features.py         extract MFCC / pitch / spectral / energy features
+  train.py            build dataset, train RandomForest with SMOTE, save it
+  predict.py          load the saved model and classify a single clip
+  embeddings.py        extract pretrained YAMNet embeddings
+  train_embeddings.py  train/compare classifiers on YAMNet embeddings
+models/          saved trained models (not committed)
 ```
+
+## Results
+
+Primary model (RandomForest on MFCC/pitch/spectral/energy features,
+SMOTE-balanced training set), on a held-out 20% test split of 440 clips:
+
+| class | precision | recall | f1 |
+|---|---|---|---|
+| brushing | 0.75 | 0.69 | 0.72 |
+| isolation | 0.82 | 0.95 | 0.88 |
+| waiting_for_food | 0.69 | 0.50 | 0.58 |
+| **overall accuracy** | | | **0.78** |
+
+YAMNet embeddings were tried as an alternative feature source but scored
+lower (55-57% test accuracy) -- see `src/train_embeddings.py`.
 
 ## Status / next steps
 
 - [x] Project scaffolding
-- [ ] Download dataset into `data/raw/`
-- [ ] Confirm filename convention matches `data_utils.py`
-- [ ] Run `python -m src.train`, check class balance and confusion matrix
-- [ ] Iterate on features/model if baseline accuracy is weak
-- [ ] Optional: CNN on spectrograms or transfer-learned embeddings (YAMNet/PANNs)
+- [x] Baseline hand-crafted-feature + RandomForest pipeline
+- [x] Fix class imbalance (SMOTE) -- 67% -> 78% test accuracy
+- [x] Try YAMNet embeddings -- underperformed, kept as a documented experiment
+- [ ] Try hyperparameter tuning / Gradient Boosting on the current features
+- [ ] Optional: CNN on spectrograms (needs more data to avoid overfitting)
 - [ ] Optional: simple CLI/web demo for uploading a clip and getting a prediction
